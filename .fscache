@@ -1,7 +1,10 @@
-::res://::1421876679
+::res://::1421970869
 icon.png::ImageTexture::1421462417::
-pong.gd::GDScript::1421876679::
-pong.scn::PackedScene::1421872526::
-::res://pong_assets::1421876490
+pong.gd::GDScript::1421970869::
+pong.scn::PackedScene::1421969306::
+::res://pong_assets::1421964445
 ball.png::ImageTexture::1421876116::
+left_pallete.png::ImageTexture::1387218774::
+right_pallete.png::ImageTexture::1387218798::
+separator.png::ImageTexture::1387218936::
 table.png::ImageTexture::1421876459::

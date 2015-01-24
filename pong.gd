@@ -1,70 +1,75 @@
-#La bola se mueve automáticamente
-#Las paletas se mueven con las teclas
-#La bola rebota en la pared superior e inferior
-#La bola rebota en las palas
-#El juego se reinicia cuando sale por los extremos laterales
-#La pelota se acelera cuando rebota en una paleta
-
 extends Node2D
 
 var screenSize
 var padSize
-
-#(in pixels/second)
-var ballSpeed = 300
-
-#direction(normal vector)
-var direction = Vector2(-1,0)
-
-#constant for pad speed (also in pixels/second)
-const PAD_SPEED = 170
+var ballPos
+var ballSpeedInPixelsPerSecond = 300
+var ballDirection = Vector2(-1,0)
+const PADDLE_SPEED_IN_PIXELS_PER_SECOND = 250
 
 func _ready():
 	screenSize = get_viewport_rect().size
-	padSize = get_node("LeftPalette").get_texture().get_size()
+	getPadSizeFromPaddleTextureSize()
+	putBallInScreenCenter()
 	set_process(true)
 
 func _process(delta):
-	var ballPos = get_node("Ball").get_pos()
-	var leftPaletteArea = Rect2( get_node("LeftPalette").get_pos() - padSize/16, padSize )
-	var rightPaletteArea = Rect2( get_node("RightPalette").get_pos() - padSize/16, padSize )
-	
-	ballPos+=direction*ballSpeed*delta
-	
-	if ( (ballPos.y<0 and direction.y <0) or (ballPos.y>screenSize.y and direction.y>0)):
-    	direction.y = -direction.y
+	updateBallPosition(delta)	
+	drawSprites(delta)
 
-	if ( (leftPaletteArea.has_point(ballPos) and direction.x < 0) or (rightPaletteArea.has_point(ballPos) and direction.x > 0)):
-		direction.x=-direction.x
-		ballSpeed*=1.1
-		direction.y=randf()*2.0-1
-		direction = direction.normalized()
-		
-	if (ballPos.x<0 or ballPos.x>screenSize.x):
-		ballPos=screenSize*0.5 #ball goes to screen center
-		ballSpeed=200
-		direction=Vector2(-1,0)
-		
+func getPadSizeFromPaddleTextureSize():
+	padSize = get_node("LeftPaddle").get_texture().get_size()
+
+func updateBallPosition(delta):
+	ballPos = get_node("Ball").get_pos()
+	ballPos+=ballDirection*ballSpeedInPixelsPerSecond*delta
+
+func drawSprites(delta):
 	get_node("Ball").set_pos(ballPos)
-	
-	#move left pad  
-	var leftPos = get_node("LeftPalette").get_pos()
+	movePaddle("LeftPaddle", delta)
+	movePaddle("RightPaddle", delta)
 
-	if (leftPos.y > 0 and Input.is_action_pressed("ui_up")):
-		leftPos.y+=-PAD_SPEED*delta
-		
-	if (leftPos.y < screenSize.y and Input.is_action_pressed("ui_down")):
-		leftPos.y+=PAD_SPEED*delta
+func resolveCollisions():
+	resolveCollisionUpDown()
+	resolveCollisionPlayer()
+	resolveCollisionScoring()
 
-	get_node("LeftPalette").set_pos(leftPos)
+func resolveCollisionUpDown():
+	if ( (ballPos.y<0 and ballDirection.y <0) or (ballPos.y>screenSize.y and ballDirection.y>0)):
+    	ballDirection.y = -ballDirection.y
 
-	#move right pad 
-	var rightPos = get_node("RightPalette").get_pos()
+func resolveCollisionPlayer():
+	var leftPaddleArea = Rect2( get_node("LeftPaddle").get_pos() - padSize/2, padSize )
+	var rightPaddleArea = Rect2( get_node("RightPaddle").get_pos() - padSize/2, padSize )
+	if ( (leftPaddleArea.has_point(ballPos) and ballDirection.x < 0) or (rightPaddleArea.has_point(ballPos) and ballDirection.x > 0)):
+		ballDirection.x=-ballDirection.x
+		ballSpeedInPixelsPerSecond*=1.1
+		ballDirection.y=randf()*2.0-1
+		ballDirection = ballDirection.normalized()
 
-	if (rightPos.y > 0 and Input.is_action_pressed("ui_left")):
-		rightPos.y+=-PAD_SPEED*delta
-		
-	if (rightPos.y < screenSize.y and Input.is_action_pressed("ui_right")):
-		rightPos.y+=PAD_SPEED*delta
+func resolveCollisionScoring():
+	if (ballPos.x<0 or ballPos.x>screenSize.x):
+		putBallInScreenCenter()
 
-	get_node("RightPalette").set_pos(rightPos)
+func updatePaddles(delta):
+	updatePaddle("LeftPaddle", delta)
+	updatePaddle("RightPaddle", delta)
+
+func updatePaddle(paddleName, delta):
+	var pos = get_node(paddleName).get_pos()
+
+	if (pos.y > 0 and Input.is_action_pressed(paddleName + "Up")):
+		pos.y+=-PADDLE_SPEED_IN_PIXELS_PER_SECOND*delta
+
+	if (pos.y < screenSize.y and Input.is_action_pressed(paddleName + "Down")):
+		pos.y+=PADDLE_SPEED_IN_PIXELS_PER_SECOND*delta
+
+	return pos
+
+func drawPaddle(paddleName, delta):
+	get_node(paddleName).set_pos(pos)
+
+func putBallInScreenCenter():
+	ballPos=screenSize*0.5
+	ballSpeedInPixelsPerSecond=300
+	ballDirection=Vector2(-1,0)
